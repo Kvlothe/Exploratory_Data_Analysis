@@ -3,7 +3,9 @@ import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import chi2_contingency
+from scipy.stats import ttest_ind
 
+# Read in csv into a DF named data
 data = pd.read_csv('churn_clean.csv')
 
 # Relabel the columns listed as item1..item8 with appropriate questions
@@ -17,19 +19,49 @@ data.rename(columns={'Item1': 'Timely response',
                      'Item8': 'Evidence of active listening'},
             inplace=True)
 
+# Create bins - originally used for continuous numeric columns in chi-squared
 # Convert 'MonthlyCharge' into, say, 4 bins of equal width
 data['MonthlyCharge_bin'] = pd.cut(data['MonthlyCharge'], bins=4, labels=['Low', 'Medium', 'High', 'Very High'])
 
 # Convert 'Bandwidth_GB_Year' into, say, 4 bins of equal width
 data['Bandwidth_GB_Year_bin'] = pd.cut(data['Bandwidth_GB_Year'], bins=4, labels=['Low', 'Medium', 'High', 'Very High'])
 
+# Group categorical columns
+categorical_columns = ['Options', 'Courteous exchange', 'Timely replacement', 'Timely response', 'Respectful response',
+                       'Evidence of active listening', 'Reliability', 'Timely fixes']
+# Group numeric columns
+numeric_columns = ['MonthlyCharge', 'Bandwidth_GB_Year']
+# Group numeric binned columns
+numeric_bin_columns = ['MonthlyCharge_bin', 'Bandwidth_GB_Year_bin']
 
-columns_of_importance = ['Options', 'Courteous exchange', 'MonthlyCharge_bin', 'Timely replacement', 'Timely response',
-                         'Bandwidth_GB_Year_bin', 'Respectful response', 'Evidence of active listening']
+# Split data based on 'Churn'
+group1 = data[data['Churn'] == 'Yes']
+group2 = data[data['Churn'] == 'No']
+
+# Plot histograms for categorical columns
+for column in categorical_columns:
+    plt.figure(figsize=(10, 6))
+    sns.countplot(data=data, x=column, hue='Churn')
+    plt.title(f"Distribution of {column} by Churn")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(f"{column}_histogram.png", dpi=300)  # specify the desired resolution with dpi
+    plt.show()
+
+# Plot histograms for numeric columns
+for column in numeric_bin_columns:
+    plt.figure(figsize=(10, 6))
+    sns.histplot(data=data, x=column, hue='Churn', kde=True, bins=30)
+    plt.title(f"Distribution of {column} by Churn")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(f"{column}_histogram.png", dpi=300)
+    plt.show()
+
 
 results = {}
 
-for column in columns_of_importance:
+for column in categorical_columns:
     # Create a contingency table
     contingency_table = pd.crosstab(data[column], data['Churn'])
 
@@ -39,10 +71,18 @@ for column in columns_of_importance:
     results[column] = {'Chi-squared Value': chi2, 'p-value': p}
 
 # Display the results
+print('Chi-squared\n')
 for column, values in results.items():
     print(f"Column: {column}")
     print(f"Chi-squared Value: {values['Chi-squared Value']}")
     print(f"P-value: {values['p-value']}\n")
+
+print('T-Test\n')
+for column in numeric_columns:
+    t_stat, p_val = ttest_ind(group1[column], group2[column])
+    print(f"Column: {column}")
+    print(f"T-statistic: {t_stat}")
+    print(f"P-value: {p_val}\n")
 
 ########################
 # contingency_table = pd.crosstab(data['Churn'], data['Bandwidth_GB_Year'])
