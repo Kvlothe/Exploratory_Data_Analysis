@@ -1,6 +1,5 @@
 import pandas as pd
 import seaborn as sns
-import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import chi2_contingency
 from scipy.stats import ttest_ind
@@ -8,7 +7,7 @@ from scipy.stats import ttest_ind
 # Read in csv into a DF named data
 data = pd.read_csv('churn_clean.csv')
 
-# Relabel the columns listed as item1..item8 with appropriate questions
+# Relabel the columns listed as item1...item8 with appropriate questions
 data.rename(columns={'Item1': 'Timely response',
                      'Item2': 'Timely fixes',
                      'Item3': 'Timely replacement',
@@ -38,27 +37,6 @@ numeric_bin_columns = ['MonthlyCharge_bin', 'Bandwidth_GB_Year_bin']
 group1 = data[data['Churn'] == 'Yes']
 group2 = data[data['Churn'] == 'No']
 
-# Plot histograms for categorical columns
-for column in categorical_columns:
-    plt.figure(figsize=(10, 6))
-    sns.countplot(data=data, x=column, hue='Churn')
-    plt.title(f"Distribution of {column} by Churn")
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.savefig(f"{column}_histogram.png", dpi=300)  # specify the desired resolution with dpi
-    plt.show()
-
-# Plot histograms for numeric columns
-for column in numeric_bin_columns:
-    plt.figure(figsize=(10, 6))
-    sns.histplot(data=data, x=column, hue='Churn', kde=True, bins=30)
-    plt.title(f"Distribution of {column} by Churn")
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.savefig(f"{column}_histogram.png", dpi=300)
-    plt.show()
-
-
 results = {}
 
 for column in categorical_columns:
@@ -84,29 +62,83 @@ for column in numeric_columns:
     print(f"T-statistic: {t_stat}")
     print(f"P-value: {p_val}\n")
 
-########################
-# contingency_table = pd.crosstab(data['Churn'], data['Bandwidth_GB_Year'])
-# print(contingency_table)
-#
-# # Perform chi-squared test to get expected frequencies
-# chi2, p, _, expected = chi2_contingency(contingency_table)
-#
-# # Calculate chi-squared residuals
-# residuals = (contingency_table - expected) / np.sqrt(expected)
-#
-# print(f"Chi-squared Value = {chi2}")
-# print(f"P-value = {p}")
-# print(f"Expected Frequencies Table: \n{expected}")
-##########################
 
-# # Plot a heatmap
-# plt.figure(figsize=(10, 7))
-# sns.heatmap(contingency_table, annot=True, cmap="YlGnBu", fmt='g')
-# plt.title('Contingency Table Heatmap')
-# plt.show()
+# Histograms
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+sns.histplot(data['MonthlyCharge'], kde=True)
+plt.title('Distribution of MonthlyCharge')
 
-# # Plot the residuals using a heatmap
-# plt.figure(figsize=(10, 7))
-# sns.heatmap(residuals, annot=True, cmap="coolwarm", center=0)
-# plt.title('Chi-squared Residuals Heatmap')
-# plt.show()
+plt.subplot(1, 2, 2)
+sns.histplot(data['Bandwidth_GB_Year'], kde=True)
+plt.title('Distribution of Bandwidth_GB_Year')
+
+plt.tight_layout()
+plt.savefig('Histogram_continuous.png')
+plt.show()
+
+# Boxplot
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+sns.boxplot(y=data['MonthlyCharge'])
+plt.title('Boxplot of MonthlyCharge')
+
+plt.subplot(1, 2, 2)
+sns.boxplot(y=data['Bandwidth_GB_Year'])
+plt.title('Boxplot of Bandwidth_GB_Year')
+
+plt.tight_layout()
+plt.savefig('Boxplot_continuous.png')
+plt.show()
+
+print(data[['MonthlyCharge', 'Bandwidth_GB_Year']].describe())
+print("Skewness for MonthlyCharge:", data['MonthlyCharge'].skew())
+print("Skewness for Bandwidth_GB_Year:", data['Bandwidth_GB_Year'].skew())
+
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+sns.countplot(x=data['Courteous exchange'])
+plt.title('Distribution of Courteous exchange')
+
+plt.subplot(1, 2, 2)
+sns.countplot(x=data['Churn'])
+plt.title('Distribution of Churn')
+
+plt.tight_layout()
+plt.savefig('Categorical_graph.png')
+plt.show()
+
+print(data['Courteous exchange'].value_counts())
+print(data['Churn'].value_counts())
+
+sns.scatterplot(x=data['MonthlyCharge'], y=data['Bandwidth_GB_Year'])
+plt.title('Scatterplot of MonthlyCharge vs. Bandwidth_GB_Year')
+plt.savefig('Scatterplot.jpg')
+plt.show()
+
+correlation = data[['MonthlyCharge', 'Bandwidth_GB_Year']].corr()
+print(correlation)
+
+cross_tab = pd.crosstab(data['Courteous exchange'], data['Churn'])
+
+sns.heatmap(cross_tab, annot=True, cmap='Blues', fmt='g')
+plt.title('Heatmap of Courteous exchange vs. Churn')
+plt.savefig('Heatmap.jpg')
+plt.show()
+print(pd.crosstab(data['Courteous exchange'], data['Churn']))
+
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+sns.boxplot(x=data['Churn'], y=data['MonthlyCharge'])
+plt.title('Boxplot of MonthlyCharge across Churn categories')
+
+plt.subplot(1, 2, 2)
+sns.boxplot(x=data['Churn'], y=data['Bandwidth_GB_Year'])
+plt.title('Boxplot of Bandwidth_GB_Year across Churn categories')
+
+plt.tight_layout()
+plt.savefig('Boxplot2.jpg')
+plt.show()
+
+print(data.groupby('Churn')['MonthlyCharge'].mean())
+print(data.groupby('Churn')['Bandwidth_GB_Year'].mean())
